@@ -11,6 +11,7 @@ public class Game : MonoBehaviour
 
     private float timer=0;
 
+    public bool simulationEnable=false;
 
 
     Cell[,] grid= new Cell[SCREEN_WIHTH, SCREEN_HEIGHT];
@@ -24,18 +25,47 @@ public class Game : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (timer > speed)
+        if (simulationEnable)
         {
-            timer = 0;
-            CountNeighbors();
-            PopulationConcrol();
+            if (timer > speed)
+            {
+                timer = 0;
+                CountNeighbors();
+                PopulationConcrol();
+            }
+            else
+            {
+                timer += Time.deltaTime;                                 //Time.deltatime 是上一幀所花的時間
+            }
         }
-        else
-        {
-            timer+=Time.deltaTime;                                 //Time.deltatime 是上一幀所花的時間
-        }
-        
 
+        UserInput();
+
+    }
+
+    void UserInput()
+    {
+        if (Input.GetMouseButtonDown(0))
+        {
+            Vector2 mousePoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+            int x = Mathf.RoundToInt(mousePoint.x);
+            int y = Mathf.RoundToInt(mousePoint.y);
+
+            if (x >= 0 && y >= 0 && x < SCREEN_WIHTH && y < SCREEN_HEIGHT) //確認是否在範圍內
+            {
+                grid[x, y].SetAlive(!grid[x, y].IsAlive); //將點擊的Cell變成相反的狀態
+            }
+        }
+
+        if (Input.GetKeyUp(KeyCode.P)) //暫停遊戲 
+        {
+            simulationEnable = false;
+        }
+        if (Input.GetKeyUp(KeyCode.B)) //繼續遊戲
+        {
+            simulationEnable = true;  
+        }
     }
 
     void PopulationConcrol()
