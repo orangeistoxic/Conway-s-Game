@@ -11,7 +11,7 @@ public class Game : MonoBehaviour
 
     private float timer=0;
 
-    public bool simulationEnable=false;
+    public bool simulationEnable=true;
 
 
     Cell[,] grid= new Cell[SCREEN_WIHTH, SCREEN_HEIGHT];
@@ -45,7 +45,22 @@ public class Game : MonoBehaviour
 
     void UserInput()
     {
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetKey(KeyCode.LeftControl))  //按住左Ctrl可以持續拖曳生成活Cell
+        {
+            if (Input.GetMouseButton(0))
+            {
+                Vector2 mousePoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+                int x = Mathf.RoundToInt(mousePoint.x);
+                int y = Mathf.RoundToInt(mousePoint.y);
+
+                if (x >= 0 && y >= 0 && x < SCREEN_WIHTH && y < SCREEN_HEIGHT) //確認是否在範圍內
+                {
+                    grid[x, y].SetAlive(true); 
+                }
+            }
+        }
+        if (Input.GetMouseButtonDown(0)) //一般點擊
         {
             Vector2 mousePoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 
