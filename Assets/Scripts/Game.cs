@@ -1,6 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.IO;
+using System.Xml.Serialization;
+
 
 public class Game : MonoBehaviour
 {
@@ -11,7 +14,7 @@ public class Game : MonoBehaviour
 
     private float timer=0;
 
-    public bool simulationEnable=true;
+    public bool simulationEnable=false;
 
 
     Cell[,] grid= new Cell[SCREEN_WIHTH, SCREEN_HEIGHT];
@@ -43,9 +46,46 @@ public class Game : MonoBehaviour
 
     }
 
-    void UserInput()
+    private void SavePattern()  //存檔                                     //待完成：可以自己取檔名
     {
-        if (Input.GetKey(KeyCode.LeftControl))  //按住左Ctrl可以持續拖曳生成活Cell
+        string path = "patterns";
+        if (!Directory.Exists(path))
+        {
+            Directory.CreateDirectory(path);
+        }
+
+        Pattern pattern = new Pattern();
+
+        string patternString = null;
+        
+        for(int y=0; y<SCREEN_HEIGHT; y++)
+        {
+            for(int x=0; x<SCREEN_WIHTH; x++)
+            {
+                if (grid[x, y].IsAlive == false)
+                {
+                    patternString += "0";
+
+                }
+                else
+                {
+                    patternString += "1";
+                }
+            }
+        }
+        pattern.patternString = patternString;
+
+        XmlSerializer serializer= new XmlSerializer(typeof(Pattern));
+        StreamWriter writer = new StreamWriter(path + "/test.xml");
+        serializer.Serialize(writer.BaseStream, pattern);
+        writer.Close();
+
+        Debug.Log(pattern.patternString);
+
+    }
+    void UserInput()                                                                             //輸入
+    {
+        if (Input.GetKey(KeyCode.LeftControl))                                                //按住左Ctrl可以持續拖曳生成活Cell
         {
             if (Input.GetMouseButton(0))
             {
@@ -54,33 +94,66 @@ public class Game : MonoBehaviour
                 int x = Mathf.RoundToInt(mousePoint.x);
                 int y = Mathf.RoundToInt(mousePoint.y);
 
-                if (x >= 0 && y >= 0 && x < SCREEN_WIHTH && y < SCREEN_HEIGHT) //確認是否在範圍內
+                if (x >= 0 && y >= 0 && x < SCREEN_WIHTH && y < SCREEN_HEIGHT)                  //確認是否在範圍內
                 {
                     grid[x, y].SetAlive(true); 
                 }
             }
         }
-        if (Input.GetMouseButtonDown(0)) //一般點擊
+        if (Input.GetMouseButtonDown(0))                                                       //一般點擊
         {
             Vector2 mousePoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 
             int x = Mathf.RoundToInt(mousePoint.x);
             int y = Mathf.RoundToInt(mousePoint.y);
 
-            if (x >= 0 && y >= 0 && x < SCREEN_WIHTH && y < SCREEN_HEIGHT) //確認是否在範圍內
+            if (x >= 0 && y >= 0 && x < SCREEN_WIHTH && y < SCREEN_HEIGHT)                    //確認是否在範圍內
             {
-                grid[x, y].SetAlive(!grid[x, y].IsAlive); //將點擊的Cell變成相反的狀態
+                grid[x, y].SetAlive(!grid[x, y].IsAlive);                                    //將點擊的Cell變成相反的狀態
             }
         }
 
-        if (Input.GetKeyUp(KeyCode.P)) //暫停遊戲 
+        if (Input.GetKeyUp(KeyCode.P))                                                       //暫停or繼續遊戲 
         {
-            simulationEnable = false;
+            if (simulationEnable)
+            {
+                simulationEnable = false;
+            }
+            else
+            {
+                simulationEnable = true;
+            }
         }
-        if (Input.GetKeyUp(KeyCode.B)) //繼續遊戲
+
+        if (Input.GetKeyDown(KeyCode.S))                                                             //存檔按鍵
         {
-            simulationEnable = true;  
+            SavePattern();
         }
+
+        if (Input.GetKeyUp(KeyCode.R))                                                                   //隨機決定所有細胞死活
+        {
+            for (int y = 0; y < SCREEN_HEIGHT; y++)
+            {
+                for (int x = 0; x < SCREEN_WIHTH; x++)
+                {
+                    
+                    grid[x, y].SetAlive(RandomAliveCell());
+                }
+            }
+        }
+
+        if (Input.GetKeyUp(KeyCode.T))                                                                //重置所有細胞
+        {
+            for (int y = 0; y < SCREEN_HEIGHT; y++)
+            {
+                for (int x = 0; x < SCREEN_WIHTH; x++)
+                {
+
+                    grid[x, y].SetAlive(false);
+                }
+            }
+        }
+
     }
 
     void PopulationConcrol()
@@ -186,7 +259,7 @@ public class Game : MonoBehaviour
             {
                 Cell cell = Instantiate(Resources.Load("Prefabs/Cell", typeof(Cell)),new Vector2(x,y),Quaternion.identity) as Cell;
                 grid[x,y] = cell;
-                grid[x, y].SetAlive(RandomAliveCell()); 
+                grid[x, y].SetAlive(false); 
             }
         }
     }
