@@ -10,6 +10,8 @@ public class Game : MonoBehaviour
     private static int SCREEN_WIHTH = 192;                            //3072 pixels 
     private static int SCREEN_HEIGHT = 108;                           //1728 pixels 
 
+    public HUD hud;
+
     public float speed = 0.1f;
 
     private float timer=0;
@@ -44,6 +46,49 @@ public class Game : MonoBehaviour
 
         UserInput();
 
+    }
+
+    private void LoadPattern()
+    {
+        string path = "patterns";
+        if (!Directory.Exists(path))
+        {
+            return;
+        }
+        XmlSerializer serializer = new XmlSerializer(typeof(Pattern));
+        path += "/test.xml";
+        
+
+        StreamReader reader=new StreamReader(path);
+        Pattern pattern = (Pattern)serializer.Deserialize(reader.BaseStream);
+        reader.Close();
+
+        bool isAlive;
+        int x = 0, y = 0;
+        
+        Debug.Log(pattern.patternString); 
+
+        foreach(char c in pattern.patternString)
+        {
+            if (c.ToString() == "1")
+            {
+                isAlive = true;
+            }
+            else
+            {
+                isAlive = false;
+            }
+
+            grid[x, y].SetAlive(isAlive);
+            x++;
+
+            if (x == SCREEN_WIHTH)
+            {
+                x = 0;
+                y++;
+            }
+
+        }
     }
 
     private void SavePattern()  //存檔                                     //待完成：可以自己取檔名
@@ -127,7 +172,7 @@ public class Game : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.S))                                                             //存檔按鍵
         {
-            SavePattern();
+            hud.showSaveDialog();
         }
 
         if (Input.GetKeyUp(KeyCode.R))                                                                   //隨機決定所有細胞死活
@@ -152,6 +197,11 @@ public class Game : MonoBehaviour
                     grid[x, y].SetAlive(false);
                 }
             }
+        }
+
+        if (Input.GetKeyUp(KeyCode.L))
+        {
+            LoadPattern();
         }
 
     }
