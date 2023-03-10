@@ -17,13 +17,15 @@ public class Game : MonoBehaviour
     private float timer=0;
 
     public bool simulationEnable=false;
-
+  
 
     Cell[,] grid= new Cell[SCREEN_WIHTH, SCREEN_HEIGHT];
 
     // Start is called before the first frame update
     void Start()
     {
+        EventManager.StartListening("SavePattern", SavePattern);
+        EventManager.StartListening("LoadPattern", LoadPattern);
         PlaceCells();
     }
 
@@ -55,8 +57,11 @@ public class Game : MonoBehaviour
         {
             return;
         }
+
         XmlSerializer serializer = new XmlSerializer(typeof(Pattern));
-        path += "/test.xml";
+        string patternName = hud.loadDialog.patternName.options[hud.loadDialog.patternName.value].text;
+        path = path + "/" + patternName + ".xml";
+
         
 
         StreamReader reader=new StreamReader(path);
@@ -121,7 +126,7 @@ public class Game : MonoBehaviour
         pattern.patternString = patternString;
 
         XmlSerializer serializer= new XmlSerializer(typeof(Pattern));
-        StreamWriter writer = new StreamWriter(path + "/test.xml");
+        StreamWriter writer = new StreamWriter(path + "/" + hud.saveDialog.patternName.text + ".xml");
         serializer.Serialize(writer.BaseStream, pattern);
         writer.Close();
 
@@ -130,78 +135,90 @@ public class Game : MonoBehaviour
     }
     void UserInput()                                                                             //輸入
     {
-        if (Input.GetKey(KeyCode.LeftControl))                                                //按住左Ctrl可以持續拖曳生成活Cell
+        if(hud.isActive == false)
         {
-            if (Input.GetMouseButton(0))
+            if (Input.GetKey(KeyCode.LeftControl))                                                //按住左Ctrl可以持續拖曳生成活Cell
+            {
+                if (Input.GetMouseButton(0))
+                {
+                    Vector2 mousePoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+                    int x = Mathf.RoundToInt(mousePoint.x);
+                    int y = Mathf.RoundToInt(mousePoint.y);
+
+                    if (x >= 0 && y >= 0 && x < SCREEN_WIHTH && y < SCREEN_HEIGHT)                  //確認是否在範圍內
+                    {
+                        grid[x, y].SetAlive(true);
+                    }
+                }
+            }
+            if (Input.GetMouseButtonDown(0))                                                       //一般點擊
             {
                 Vector2 mousePoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 
                 int x = Mathf.RoundToInt(mousePoint.x);
                 int y = Mathf.RoundToInt(mousePoint.y);
 
-                if (x >= 0 && y >= 0 && x < SCREEN_WIHTH && y < SCREEN_HEIGHT)                  //確認是否在範圍內
+                if (x >= 0 && y >= 0 && x < SCREEN_WIHTH && y < SCREEN_HEIGHT)                    //確認是否在範圍內
                 {
-                    grid[x, y].SetAlive(true); 
+                    grid[x, y].SetAlive(!grid[x, y].IsAlive);                                    //將點擊的Cell變成相反的狀態
                 }
             }
-        }
-        if (Input.GetMouseButtonDown(0))                                                       //一般點擊
-        {
-            Vector2 mousePoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 
-            int x = Mathf.RoundToInt(mousePoint.x);
-            int y = Mathf.RoundToInt(mousePoint.y);
-
-            if (x >= 0 && y >= 0 && x < SCREEN_WIHTH && y < SCREEN_HEIGHT)                    //確認是否在範圍內
+            if (Input.GetKeyUp(KeyCode.P))                                                       //暫停or繼續遊戲 
             {
-                grid[x, y].SetAlive(!grid[x, y].IsAlive);                                    //將點擊的Cell變成相反的狀態
-            }
-        }
-
-        if (Input.GetKeyUp(KeyCode.P))                                                       //暫停or繼續遊戲 
-        {
-            if (simulationEnable)
-            {
-                simulationEnable = false;
-            }
-            else
-            {
-                simulationEnable = true;
-            }
-        }
-
-        if (Input.GetKeyDown(KeyCode.S))                                                             //存檔按鍵
-        {
-            hud.showSaveDialog();
-        }
-
-        if (Input.GetKeyUp(KeyCode.R))                                                                   //隨機決定所有細胞死活
-        {
-            for (int y = 0; y < SCREEN_HEIGHT; y++)
-            {
-                for (int x = 0; x < SCREEN_WIHTH; x++)
+                if (simulationEnable)
                 {
-                    
-                    grid[x, y].SetAlive(RandomAliveCell());
+                    simulationEnable = false;
+                }
+                else
+                {
+                    simulationEnable = true;
                 }
             }
-        }
 
-        if (Input.GetKeyUp(KeyCode.T))                                                                //重置所有細胞
-        {
-            for (int y = 0; y < SCREEN_HEIGHT; y++)
+            if (Input.GetKeyDown(KeyCode.S))                                                             //存檔按鍵
             {
-                for (int x = 0; x < SCREEN_WIHTH; x++)
-                {
+                hud.showSaveDialog();
+            }
 
-                    grid[x, y].SetAlive(false);
+            if (Input.GetKeyUp(KeyCode.R))                                                                   //隨機決定所有細胞死活
+            {
+                for (int y = 0; y < SCREEN_HEIGHT; y++)
+                {
+                    for (int x = 0; x < SCREEN_WIHTH; x++)
+                    {
+
+                        grid[x, y].SetAlive(RandomAliveCell());
+                    }
                 }
             }
-        }
 
-        if (Input.GetKeyUp(KeyCode.L))
-        {
-            LoadPattern();
+            if (Input.GetKeyUp(KeyCode.C))                                                                //重置所有細胞
+            {
+                for (int y = 0; y < SCREEN_HEIGHT; y++)
+                {
+                    for (int x = 0; x < SCREEN_WIHTH; x++)
+                    {
+
+                        grid[x, y].SetAlive(false);
+                    }
+                }
+            }
+
+            if (Input.GetKeyUp(KeyCode.L))
+            {
+                hud.showLoadDialog();
+            }
+
+            if (Input.GetKeyDown(KeyCode.LeftBracket))
+            {
+                speed = speed  *1.5f;
+            }
+            if (Input.GetKeyDown(KeyCode.RightBracket))
+            {
+                speed = speed /1.5f;
+            }
         }
 
     }
